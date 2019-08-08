@@ -1,7 +1,6 @@
 package gov.bnl.logbook;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -20,12 +19,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.http.HttpStatus;
-import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -51,7 +51,7 @@ public class LogbookService {
     ObjectMapper objectMapper = new ObjectMapper();
             
     /**
-     * PUT method to create a logbook.
+     * PUT method to create a logbook
      * 
      * @param id - id of the log to be created
      * @param src - src of the log to be created
@@ -83,6 +83,37 @@ public class LogbookService {
     }
     
     /**
+     * GET method for retrieving a collection of Logbook instances, based on a
+     * multi-parameter query specifying ...
+     *
+     * @return list of all relevant Logbooks
+     */
+    @GetMapping
+    public List<Logbook> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+        return search(allRequestParams);
+    }
+
+    /**
+     * GET method for retrieving an instance of Logbook identified by id
+     *
+     * @param id - logbook id to search for
+     * @return found logbook
+     */
+    @GetMapping("/{id}")
+    public Logbook read(@PathVariable("id") long id) {
+        logbookManagerAudit.info("getting logbook with id: " + id);
+
+        Optional<Logbook> foundLogbook = findById(id);
+        if (foundLogbook.isPresent())
+            return foundLogbook.get();
+        else {
+            log.log(Level.SEVERE, "The logbook with the id " + id + " does not exist", new ResponseStatusException(HttpStatus.NOT_FOUND));
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "The logbook with the id " + id + " does not exist");
+        }
+    }
+    
+    /**
      * find logbook using the given logbook id
      * 
      * @param id - id of logbook to be found
@@ -97,11 +128,19 @@ public class LogbookService {
                 Logbook logbook = objectMapper.readValue(response.getSourceAsBytesRef().streamInput(), Logbook.class);               
                 return Optional.of(logbook);
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             log.log(Level.SEVERE, "Failed to find logbook with id: " + id, e);
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Failed to find logbook with id: " + id, null);
         }
         return Optional.empty();
+    }
+    
+    /**
+     * search for a logbook(s)
+     */
+    //TODO
+    public List<Logbook> search(MultiValueMap<String, String> requestParams) {
+        return null;
     }
 }
