@@ -1,14 +1,9 @@
 package gov.bnl.logbook;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import javax.xml.bind.annotation.XmlRootElement;
 import javax.xml.bind.annotation.XmlType;
 
 import org.commonmark.parser.Parser;
-import org.commonmark.renderer.html.HtmlRenderer;
 import org.commonmark.renderer.text.TextContentRenderer;
 
 /**
@@ -114,5 +109,9 @@ public class Logbook {
         Parser parser = Parser.builder().build();
         TextContentRenderer text_renderer = TextContentRenderer.builder().build();
         this.description = text_renderer.render(parser.parse(src));
+    }
+
+    public String toLog() {
+        return "Id: " + id + ", \nsrc:\n" + src + "\nplain text:\n" + description;
     }
 }
