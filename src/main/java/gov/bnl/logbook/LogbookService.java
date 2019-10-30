@@ -18,7 +18,10 @@ import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder;
+import org.elasticsearch.index.query.MultiMatchQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -143,11 +146,10 @@ public class LogbookService {
     }
     
     /**
-     * search for a logbook(s)
+     * more-like-this search for a logbook(s)
      */
-    //TODO
-    @GetMapping("/search")
-    public List<Logbook> search(@RequestBody String like_this) {
+    @GetMapping("/moreLikeThis")
+    public List<Logbook> moreLikeThis(@RequestBody String like_this) {
         RestHighLevelClient client = esService.getSearchClient();
         try {
             int size = 10000;
@@ -179,6 +181,119 @@ public class LogbookService {
         } catch (Exception e) {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
                     "Search failed for: " + like_this + ", CAUSE: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * fuzzy search for a logbook(s)
+     */
+    @GetMapping("/fuzzy")
+    public List<Logbook> fuzzy(@RequestBody String fuzzy) {
+        RestHighLevelClient client = esService.getSearchClient();
+        try {
+            int size = 10000;
+            int from = 0;
+            
+            QueryBuilder qb = QueryBuilders.fuzzyQuery("description", fuzzy);
+            
+            SearchRequest searchRequest = new SearchRequest(ES_LOGBOOK_INDEX);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.size(size);
+            if (from >= 0) {
+                searchSourceBuilder.from(from);
+            }
+            searchSourceBuilder.query(qb);
+            searchRequest.types(ES_LOGBOOK_TYPE);
+            searchRequest.source(searchSourceBuilder);
+            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            List<Logbook> result = new ArrayList<Logbook>();
+            searchResponse.getHits().forEach(hit -> {
+                try {
+                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), Logbook.class));
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            });
+            return result;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Search failed for: " + fuzzy + ", CAUSE: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * match query with fuzziness search for a logbook(s)
+     */
+    @GetMapping("/search")
+    public List<Logbook> search(@RequestBody String search) {
+        RestHighLevelClient client = esService.getSearchClient();
+        try {
+            int size = 10000;
+            int from = 0;
+            
+            String[] fields = {"description"};               
+            MatchQueryBuilder qb = QueryBuilders.matchQuery("description", search).minimumShouldMatch("1%");
+            qb.fuzziness(1);
+            SearchRequest searchRequest = new SearchRequest(ES_LOGBOOK_INDEX);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.size(size);
+            if (from >= 0) {
+                searchSourceBuilder.from(from);
+            }
+            searchSourceBuilder.query(qb);
+            searchRequest.types(ES_LOGBOOK_TYPE);
+            searchRequest.source(searchSourceBuilder);
+            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            List<Logbook> result = new ArrayList<Logbook>();
+            searchResponse.getHits().forEach(hit -> {
+                try {
+                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), Logbook.class));
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            });
+            return result;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Search failed for: " + search + ", CAUSE: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * match query with fuzziness search for a logbook(s)
+     */
+    @GetMapping("/multiSearch/{other_field}")
+    public List<Logbook> multiFieldSearch(@RequestBody String search, @PathVariable("otherField") String field) {
+        RestHighLevelClient client = esService.getSearchClient();
+        try {
+            int size = 10000;
+            int from = 0;
+            
+            String[] fields = {"description",field};               
+            MultiMatchQueryBuilder qb = QueryBuilders.multiMatchQuery(fields, search).minimumShouldMatch("1%");
+            qb.fuzziness(1);
+            SearchRequest searchRequest = new SearchRequest(ES_LOGBOOK_INDEX);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.size(size);
+            if (from >= 0) {
+                searchSourceBuilder.from(from);
+            }
+            searchSourceBuilder.query(qb);
+            searchRequest.types(ES_LOGBOOK_TYPE);
+            searchRequest.source(searchSourceBuilder);
+            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            List<Logbook> result = new ArrayList<Logbook>();
+            searchResponse.getHits().forEach(hit -> {
+                try {
+                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), Logbook.class));
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            });
+            return result;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Search failed for: " + search + ", CAUSE: " + e.getMessage(), e);
         }
     }
 }
