@@ -9,7 +9,7 @@ to improve olog-es and thus to improve olog-service.
 
 
 **Current Project Status:**
-. . .
+---
 
 PUT operation to create a logbook works correctly.
 It takes an id number in the uri and markdown(commonmark)source code in the body and creates a logbook.
@@ -27,17 +27,17 @@ Example body(using 1 in uri):
 GET operation to find a logbook by ID works correctly.
 It takes an id number in the uri and returns the log entry or a 404 error.
 
-##GET operation to search for a logbook using a more-like-this query is now implemented.
+## GET operation to search for a logbook using a more-like-this query is now implemented.
 Using the previously mentioned Sparta example, some queries that will find it include:
--is
--This
--fdfsdf is dfd dfdf fdsd
--Sparta*!
--sparta
+- is
+- This
+- fdfsdf is dfd dfdf fdsd
+- Sparta*!
+- sparta
 And some queries that will not find it include:
--tis
--fdf fdsf tis fdsfsd
--i s
+- tis
+- fdf fdsf tis fdsfsd
+- i s
 
 GET operation to search for a logbook using fuzzy searching is **NOT** yet implemented.
 
