@@ -27,13 +27,14 @@ Example body(using 1 in uri):
 GET operation to find a logbook by ID works correctly.
 It takes an id number in the uri and returns the log entry or a 404 error.
 
-## GET operation to search for a logbook using a more-like-this query is now implemented.
+### GET operation to search for a logbook using a more-like-this query is now implemented.
 Using the previously mentioned Sparta example, some queries that will find it include:
 - is
 - This
 - fdfsdf is dfd dfdf fdsd
 - Sparta*!
 - sparta
+
 And some queries that will not find it include:
 - tis
 - fdf fdsf tis fdsfsd
