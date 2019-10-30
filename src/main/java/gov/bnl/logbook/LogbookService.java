@@ -1,6 +1,7 @@
 package gov.bnl.logbook;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -11,10 +12,15 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
+import org.elasticsearch.action.search.SearchRequest;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.index.query.MoreLikeThisQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -82,16 +88,16 @@ public class LogbookService {
         return null;  
     }
     
-    /**
-     * GET method for retrieving a collection of Logbook instances, based on a
-     * multi-parameter query specifying ...
-     *
-     * @return list of all relevant Logbooks
-     */
-    @GetMapping
-    public List<Logbook> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
-        return search(allRequestParams);
-    }
+//    /**
+//     * GET method for retrieving a collection of Logbook instances, based on a
+//     * multi-parameter query specifying ...
+//     *
+//     * @return list of all relevant Logbooks
+//     */
+//    @GetMapping
+//    public List<Logbook> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
+//        return search(allRequestParams);
+//    }
 
     /**
      * GET method for retrieving an instance of Logbook identified by id
@@ -140,7 +146,39 @@ public class LogbookService {
      * search for a logbook(s)
      */
     //TODO
-    public List<Logbook> search(MultiValueMap<String, String> requestParams) {
-        return null;
+    @GetMapping("/search")
+    public List<Logbook> search(@RequestBody String like_this) {
+        RestHighLevelClient client = esService.getSearchClient();
+        try {
+            int size = 10000;
+            int from = 0;
+            
+            String[] fields = {"description"};               
+            String[] texts = {like_this};
+            MoreLikeThisQueryBuilder qb = QueryBuilders.moreLikeThisQuery(fields, texts, null).minDocFreq(1).minTermFreq(1).minimumShouldMatch("1%");
+            
+            SearchRequest searchRequest = new SearchRequest(ES_LOGBOOK_INDEX);
+            SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+            searchSourceBuilder.size(size);
+            if (from >= 0) {
+                searchSourceBuilder.from(from);
+            }
+            searchSourceBuilder.query(qb);
+            searchRequest.types(ES_LOGBOOK_TYPE);
+            searchRequest.source(searchSourceBuilder);
+            final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
+            List<Logbook> result = new ArrayList<Logbook>();
+            searchResponse.getHits().forEach(hit -> {
+                try {
+                    result.add(objectMapper.readValue(hit.getSourceRef().streamInput(), Logbook.class));
+                } catch (IOException e) {
+                    throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR);
+                }
+            });
+            return result;
+        } catch (Exception e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR,
+                    "Search failed for: " + like_this + ", CAUSE: " + e.getMessage(), e);
+        }
     }
 }
