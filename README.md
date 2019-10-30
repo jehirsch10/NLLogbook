@@ -7,6 +7,8 @@ to improve olog-es and thus to improve olog-service.
 
 *The curl command to set up the index properly is included in the mappind_definitions.sh file.*
 
+*Note that authentication/authorization is not required.
+
 
 **Current Project Status:**
 ---
@@ -27,7 +29,7 @@ Example body(using 1 in uri):
 GET operation to find a logbook by ID works correctly.
 It takes an id number in the uri and returns the log entry or a 404 error.
 
-### GET operation to search for a logbook using a more-like-this query is now implemented(/moreLikeThis).
+#### GET operation to search for a logbook using a more-like-this query is now implemented(/moreLikeThis).
 Using the previously mentioned Sparta example, some queries(in body) that will find it include:
 - is
 - This
@@ -40,7 +42,7 @@ And some queries that will not find it include:
 - fdf fdsf tis fdsfsd
 - i s
 
-### GET operation to search for a logbook using fuzzy searching is now implemented(/fuzzy).
+#### GET operation to search for a logbook using fuzzy searching is now implemented(/fuzzy).
 Using the previously mentioned Sparta example, some queries(in body) that will find it include:
 - is
 - parta
@@ -53,7 +55,7 @@ And some queries that will not find it include:
 - is s
 - \*Sparta*!
 
-### GET operation to search for a logbook using a match query and fuzzy searching is now implemented(/search).
+#### GET operation to search for a logbook using a match query and fuzzy searching is now implemented(/search).
 Using the previously mentioned Sparta example, some queries that(in body) will find it include:
 - is
 - thas xfr
@@ -64,7 +66,5 @@ And some queries that will not find it include:
 - part
 - fdfdf fdfd
 
-### GET operation to search for a logbook using a multi-match query and fuzzy searching is now implemented.(/multisearch/{other_field})
+#### GET operation to search for a logbook using a multi-match query and fuzzy searching is now implemented(/multisearch/{other_field}).
 This operation cannot be well tested using the current curl index set-up, as it is meant for searching through multiple fields rather than just description.
-
-*Note that authentication/authorization is not required.
