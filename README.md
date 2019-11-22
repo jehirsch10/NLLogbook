@@ -5,7 +5,7 @@ Natural Language Logbook
 Project to explore using SpringBoot, Markdown, and light natural language processing
 to improve olog-es and thus to improve olog-service.
 
-*The curl command to set up the index properly is included in the mappind_definitions.sh file.*
+*The curl command to set up the index properly is included in the mapping_definitions.sh file.*
 
 *Note that authentication/authorization is not required.
 
@@ -17,7 +17,9 @@ PUT operation to create a logbook works correctly.
 It takes an id number in the uri and markdown(commonmark)source code in the body and creates a logbook.
 Currently if the id of the logbook to be created is already in use, the operation will replace the old logbook with the new one. 
 
-Example body(using 1 in uri): 
+Example body(using 1 in uri): `"This is *Sparta*!"`
+
+Result:
 ```
 {
     "id": 1,

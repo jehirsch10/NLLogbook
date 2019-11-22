@@ -90,17 +90,6 @@ public class LogbookService {
         }
         return null;  
     }
-    
-//    /**
-//     * GET method for retrieving a collection of Logbook instances, based on a
-//     * multi-parameter query specifying ...
-//     *
-//     * @return list of all relevant Logbooks
-//     */
-//    @GetMapping
-//    public List<Logbook> query(@RequestParam MultiValueMap<String, String> allRequestParams) {
-//        return search(allRequestParams);
-//    }
 
     /**
      * GET method for retrieving an instance of Logbook identified by id
