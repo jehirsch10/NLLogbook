@@ -2,6 +2,7 @@ package gov.bnl.logbook;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -28,6 +29,13 @@ public class LogbookSearchIT {
     @Before
     public void setup() throws InterruptedException {
         logbookService.create(1,"This is *Sparta*!");
+        logbookService.create(2,"**Bones mend. Regret stays with you forever.**");
+        logbookService.create(3,"Inflation allows for **subtle** wage cuts.");
+        logbookService.create(4,"Lorem ipsum dolor sit amet, consectetur adipiscing elit. Quisque eros justo, consequat a risus ut, semper tincidunt orci. Etiam ante ipsum, fringilla a velit in, pellentesque pulvinar risus. Suspendisse euismod vel diam a aliquam. Donec vestibulum, turpis quis aliquet placerat, ipsum urna condimentum dolor, et volutpat tellus mi gravida metus. Sed ac urna id nulla sagittis consequat eget sit amet dolor. Cras lobortis augue orci, ac imperdiet est rhoncus at. Ut cursus risus a augue molestie volutpat. Fusce enim purus, pharetra at massa ut, egestas mattis quam. In hac habitasse platea dictumst. Aenean vel vehicula mi.\n\nIn hac habitasse platea dictumst. Donec vitae enim ut orci suscipit ullamcorper ac in est. Morbi sed erat vel leo dapibus auctor vel nec nibh. Praesent facilisis dolor sed gravida pharetra. Fusce ultricies magna eu dignissim molestie. Vestibulum sed sapien nec felis mattis tincidunt. Quisque eget risus sed mauris laoreet fermentum. Phasellus eros tellus, eleifend id diam vel, finibus porttitor elit.\n\nDonec ac est elit. Vestibulum tellus sem, pharetra id viverra in, pharetra sit amet metus. Phasellus eros orci, elementum interdum nulla sed, ullamcorper euismod quam. Nam lobortis venenatis pretium. Nam id vestibulum orci, vel malesuada diam. Integer efficitur neque quam, in consectetur nulla sodales quis. Curabitur a nisi id leo consequat tempor. Praesent ac efficitur justo, ac fermentum orci. In in vehicula ligula. Phasellus placerat a tellus in scelerisque. Ut consequat dapibus mi eget placerat. Integer quis turpis lectus. Morbi quis interdum nisl. Sed augue magna, elementum quis diam sagittis, auctor bibendum lectus. ");
+        logbookService.create(5,"This isn't Sparta! Or is it?");
+        logbookService.create(6,"Where has my Sparta gone?");
+        logbookService.create(7,"Has this always been Sparta?");
+        logbookService.create(8,"Sparta (Doric Greek: Σπάρτα, Spártā; Attic Greek: Σπάρτη, Spártē) was a prominent city-state in ancient Greece. In antiquity, the city-state was known as Lacedaemon (Λακεδαίμων, Lakedaímōn), while the name Sparta referred to its main settlement on the banks of the Eurotas River in Laconia, in south-eastern Peloponnese.[1] Around 650 BC, it rose to become the dominant military land-power in ancient Greece. THIS IS COPIED FROM SPARTA WIKIPEDIA PAGE");
     }
     
     /**
@@ -118,30 +126,34 @@ public class LogbookSearchIT {
      * search for a logbook using match and fuzzy searching
      */
     @Test
-    public void search() {// SHOULD FIND THESE QUERIES
-        // full src 
-        assertTrue("Failed to find the logbook using search when the query was: full src",
-                logbookService.search("This is *Sparta*!").size()==1);
-        // caps don't matter
-        assertTrue("Failed to find the logbook using search when the query was: caps don't matter",
-                logbookService.search("sparta").size()==1);
-        // doesn't care about md
-        assertTrue("Failed to find the logbook using search when the query was: doesn't care about md",
-                logbookService.search("Sparta*!").size()==1);
-        // not all words necessary 
-        assertTrue("Failed to find the logbook using search when the query was: not all words necessary",
-                logbookService.search("fdsdf is fddfs fsdd fdsf").size()==1);
-        // off by one letter and other wrong words
-        assertTrue("Failed to find the logbook using search when the query was: off by one letter and other wrong words",
-                logbookService.search("parta xfr").size()==1);
-        
-        // SHOULD NOT FIND THESE QUERIES
-        // gobbledygook
-        assertTrue("Found the logbook using search when the query was: gobbledygook",
-                logbookService.search("cvber piodf csddf qwedf").size()==0);
-        // off by two letters
-        assertTrue("Found the logbook using search when the query was: off by two letters",
-                logbookService.search("part").size()==0);        
+    public void search() {
+        // search: This is *Sparta*! (original test case)
+        assertTrue("Failed to only find sparta related logbooks 8,1,5,7,6 using search when the query was: This is *Sparta*!",
+                include(logbookService.search("This is *Sparta*!"),Arrays.asList(8L,1L,5L,7L,6L))
+                && dontInclude(logbookService.search("This is *Sparta*!"),Arrays.asList(2L,3L,4L)));
+        // search: sparta (caps don't matter)
+        assertTrue("Failed to only find sparta related logbooks 8,1,6,7,5 using search when the query was: sparta",
+                include(logbookService.search("sparta"),Arrays.asList(8L,1L,6L,7L,5L))
+                && dontInclude(logbookService.search("sparta"),Arrays.asList(2L,3L,4L)));
+        // search: `**sparta**` (md doesn't matter)
+        assertTrue("Failed to only find sparta related logbooks 8,1,6,7,5 search when the query was: `**sparta**`",
+                include(logbookService.search("`**sparta**`"),Arrays.asList(8L,1L,6L,7L,5L))
+                && dontInclude(logbookService.search("`**sparta**`"),Arrays.asList(2L,3L,4L)));
+        // search: fdsdf is fddfs fsdd fdsf (matches is with no fuzziness, and junk words) 
+        assertTrue("Failed to find the 'is' logbooks 1,5,8 using search when the query was: fdsdf is fddfs fsdd fdsf",
+                include(logbookService.search("fdsdf is fddfs fsdd fdsf"),Arrays.asList(1L,5L,8L))
+                && dontInclude(logbookService.search("fdsdf is fddfs fsdd fdsf"),Arrays.asList(2L,3L,4L,6L,7L)));
+        // search: parta xfr (5 letter word off by one letter, and a junk word)
+        assertTrue("Failed to only find sparta related logbooks 1,6,7,5,8 search when the query was: parta xfr",
+                include(logbookService.search("parta xfr"),Arrays.asList(1L,6L,7L,5L,8L))
+                && dontInclude(logbookService.search("parta xfr"),Arrays.asList(2L,3L,4L)));
+        // search: sporto (off by two letters)
+        assertTrue("Failed to only find sparta related logbooks 8,1,6,7,5 search when the query was: sporto",
+                include(logbookService.search("sporto"),Arrays.asList(8L,1L,6L,7L,5L))
+                && dontInclude(logbookService.search("sporto"),Arrays.asList(2L,3L,4L)));
+        // search: cvber piodf csddf qwedf (gobbledygook)
+        assertTrue("Found a logbook using search when the query was: gobbledygook",
+                dontInclude(logbookService.search("cvber piodf csddf qwedf"),Arrays.asList(1L,2L,3L,4L,5L,6L,7L,8L)));
     }
     
     /**
@@ -155,5 +167,40 @@ public class LogbookSearchIT {
         Logbook foundLogbook = logbookService.multiFieldSearch("This is *Sparta*!", "topic").get(0);
         // verify the logbook was found as expected
         assertEquals("Failed to find the logbook", logbook, foundLogbook);
+    }
+
+    public static boolean include(List<Logbook> results, List<Long> include) {
+        if(results.size()<1)
+            return false;
+        boolean found = false;
+        for(long id: include) {
+            for(Logbook result: results) {
+                if(result.getId()==(id)) {
+                    found = true;
+                    break;
+                }
+            }
+            if(found)
+                found = false;
+            else
+                return false;
+        }
+        return true;
+    }
+    public static boolean dontInclude(List<Logbook> results, List<Long> dontInclude) {
+        if(results.size()<1)
+            return true;
+        boolean found = false;
+        for(long id: dontInclude) {
+            for(Logbook result: results) {
+                if(result.getId()==(id)) {
+                    found = true;
+                    break;
+                }
+            }
+            if(found)
+                return false;
+        }
+        return true;
     }
 }

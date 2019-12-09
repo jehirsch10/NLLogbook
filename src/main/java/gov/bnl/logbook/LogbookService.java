@@ -14,9 +14,11 @@ import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.SearchType;
 import org.elasticsearch.action.support.WriteRequest;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
+import org.elasticsearch.common.unit.Fuzziness;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.MatchQueryBuilder;
 import org.elasticsearch.index.query.MoreLikeThisQueryBuilder;
@@ -24,6 +26,8 @@ import org.elasticsearch.index.query.MultiMatchQueryBuilder;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -221,8 +225,8 @@ public class LogbookService {
             int from = 0;
             
             String[] fields = {"description"};               
-            MatchQueryBuilder qb = QueryBuilders.matchQuery("description", search).minimumShouldMatch("1%");
-            qb.fuzziness(1);
+            MatchQueryBuilder qb = QueryBuilders.matchQuery("description", search);
+            qb.fuzziness(Fuzziness.AUTO);
             SearchRequest searchRequest = new SearchRequest(ES_LOGBOOK_INDEX);
             SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
             searchSourceBuilder.size(size);
@@ -230,8 +234,12 @@ public class LogbookService {
                 searchSourceBuilder.from(from);
             }
             searchSourceBuilder.query(qb);
+            searchSourceBuilder.sort(SortBuilders.scoreSort().order(SortOrder.DESC));
+            searchSourceBuilder.explain();
             searchRequest.types(ES_LOGBOOK_TYPE);
             searchRequest.source(searchSourceBuilder);
+            // ONLY USE DFS WITH SMALL AMOUNTS OF DOCS
+            searchRequest.searchType(SearchType.DFS_QUERY_THEN_FETCH);
             final SearchResponse searchResponse = client.search(searchRequest, RequestOptions.DEFAULT);
             List<Logbook> result = new ArrayList<Logbook>();
             searchResponse.getHits().forEach(hit -> {
